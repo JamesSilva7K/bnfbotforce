@@ -453,9 +453,10 @@ def api_get_metrics():
 # --- Suporte a Webhook Serverless do Telegram para Vercel ---
 
 bot_dispatcher_instance = None
+bot_dispatcher_error = None
 
 def get_serverless_dispatcher():
-    global bot_dispatcher_instance
+    global bot_dispatcher_instance, bot_dispatcher_error
     if bot_dispatcher_instance is None:
         try:
             from telegram import Bot
@@ -464,30 +465,37 @@ def get_serverless_dispatcher():
             import bot as telegram_bot_module
 
             token = database.get_system_setting("telegram_bot_token") or TELEGRAM_BOT_TOKEN
-            if not token or token.strip() == "":
-                app.logger.warning("Token do Telegram Bot não configurado no banco nem nas variáveis de ambiente.")
+            if not token or not str(token).strip():
+                bot_dispatcher_error = "Token do Telegram não encontrado"
+                app.logger.warning(bot_dispatcher_error)
                 return None
 
-            bot_obj = Bot(token=token.strip())
-            # workers=0 é OBRIGATÓRIO em runtime Serverless (Vercel):
-            # Processa o update de forma síncrona na mesma thread antes de fechar a requisição HTTP.
+            bot_obj = Bot(token=str(token).strip())
             dispatcher = Dispatcher(bot_obj, None, workers=0, use_context=True)
             telegram_bot_module.setup_dispatcher_handlers(dispatcher)
             bot_dispatcher_instance = dispatcher
             app.logger.info("Dispatcher Serverless síncrono inicializado com sucesso.")
         except Exception as e:
-            app.logger.error(f"Erro ao instanciar Dispatcher Serverless: {e}")
+            import traceback
+            bot_dispatcher_error = f"{type(e).__name__}: {e} | {traceback.format_exc()}"
+            app.logger.error(f"Erro ao instanciar Dispatcher Serverless: {bot_dispatcher_error}")
             return None
     return bot_dispatcher_instance
 
-@app.route("/api/telegram-webhook", methods=["POST"])
+@app.route("/api/telegram-webhook", methods=["POST", "GET"])
 def telegram_webhook():
     """Endpoint Serverless de resposta imediata para Webhook do Telegram na Vercel"""
+    if request.method == "GET":
+        dispatcher = get_serverless_dispatcher()
+        if dispatcher:
+            return jsonify({"status": "ok", "message": "Webhook serverless ativo e pronto para receber atualizações do Telegram."}), 200
+        return jsonify({"status": "error", "message": f"Falha na inicialização do bot: {bot_dispatcher_error}"}), 500
+
     try:
         from telegram import Update
         dispatcher = get_serverless_dispatcher()
         if not dispatcher:
-            return jsonify({"status": "error", "message": "Bot não configurado"}), 500
+            return jsonify({"status": "error", "message": f"Bot não configurado: {bot_dispatcher_error}"}), 500
 
         data = request.get_json(force=True)
         if data:
