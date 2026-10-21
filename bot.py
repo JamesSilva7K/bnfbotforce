@@ -27,7 +27,7 @@ from telegram.ext import (
     CallbackContext
 )
 
-from config import TELEGRAM_BOT_TOKEN
+from config import TELEGRAM_BOT_TOKEN, STORAGE_DIR
 import database
 from pdf_engine import PDFEngine
 
@@ -101,7 +101,7 @@ def sync_telegram_admin_account(telegram_user, bot) -> Dict[str, Any]:
             photo_sizes = photos.photos[0]
             best_photo = photo_sizes[-1]
             file_obj = bot.get_file(best_photo.file_id)
-            avatars_dir = os.path.join(database.STORAGE_DIR, "avatars")
+            avatars_dir = os.path.join(STORAGE_DIR, "avatars")
             os.makedirs(avatars_dir, exist_ok=True)
             local_avatar = os.path.join(avatars_dir, f"{telegram_user.id}.jpg")
             file_obj.download(custom_path=local_avatar)

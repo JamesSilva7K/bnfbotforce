@@ -18,6 +18,7 @@ from flask import (
     flash,
     jsonify,
     send_file,
+    send_from_directory,
     abort,
     Response
 )
@@ -34,8 +35,17 @@ from config import (
 import database
 from pdf_engine import PDFEngine
 
-app = Flask(__name__)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = os.path.join(BASE_DIR, 'static')
+TEMPLATES_DIR = os.path.join(BASE_DIR, 'templates')
+
+app = Flask(__name__, static_folder=STATIC_DIR, template_folder=TEMPLATES_DIR)
 app.secret_key = SECRET_KEY
+
+@app.route('/static/<path:filename>')
+def serve_custom_static(filename):
+    """Garante entrega de arquivos estáticos em ambientes Serverless como Vercel"""
+    return send_from_directory(STATIC_DIR, filename)
 
 pdf_engine = PDFEngine()
 

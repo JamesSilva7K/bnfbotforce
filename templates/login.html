@@ -4,8 +4,170 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login | Super-Admin Painel BNF</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}?v=2.2">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%234f46e5%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M13 2L3 14h9l-1 8 10-12h-9l1-8z%22/></svg>">
+  <style>
+    /* Estilos críticos inline para garantir renderização perfeita e impedir explosão de SVGs */
+    :root {
+      --bg-main: #090d16;
+      --bg-card: rgba(30, 41, 59, 0.85);
+      --border-color: rgba(255, 255, 255, 0.1);
+      --primary: #4f46e5;
+      --primary-light: #818cf8;
+      --accent: #06b6d4;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body.flex-center {
+      background-color: #090d16;
+      background-image: 
+        radial-gradient(at 50% 0%, rgba(79, 70, 229, 0.25) 0px, transparent 65%),
+        radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.15) 0px, transparent 55%);
+      background-attachment: fixed;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    svg {
+      max-width: 100%;
+      height: auto;
+      vertical-align: middle;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .svg-icon-sm { width: 1rem !important; height: 1rem !important; }
+    .svg-icon-md { width: 1.5rem !important; height: 1.5rem !important; }
+    .svg-icon { width: 1.25rem !important; height: 1.25rem !important; }
+    .login-container {
+      width: 100%;
+      max-width: 440px;
+      margin: 0 auto;
+    }
+    .login-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      position: relative;
+      overflow: hidden;
+    }
+    .login-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #4f46e5, #06b6d4);
+    }
+    .login-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .brand-badge {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #4f46e5, #06b6d4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.25rem;
+      box-shadow: 0 0 25px rgba(79, 70, 229, 0.5);
+    }
+    .brand-badge svg {
+      width: 26px !important;
+      height: 26px !important;
+      stroke: #ffffff;
+      color: #ffffff;
+    }
+    .font-xl { font-size: 1.5rem; font-weight: 700; }
+    .font-md { font-size: 0.9rem; }
+    .font-xs { font-size: 0.75rem; }
+    .text-main { color: #f8fafc; }
+    .text-muted { color: #94a3b8; }
+    .text-dim { color: #64748b; }
+    .mt-1 { margin-top: 0.25rem; }
+    .mt-3 { margin-top: 1.5rem; }
+    .mb-2 { margin-bottom: 1rem; }
+    .mb-3 { margin-bottom: 1.5rem; }
+    .text-center { text-align: center; }
+    .form-group { margin-bottom: 1.25rem; text-align: left; }
+    .form-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #94a3b8;
+      margin-bottom: 0.5rem;
+    }
+    .form-control {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background-color: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      color: #f8fafc;
+      font-size: 0.95rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-control:focus {
+      border-color: #818cf8;
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.3);
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      transition: all 0.2s ease;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #4f46e5, #4338ca);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #4338ca, #3730a3);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.6);
+    }
+    .w-100 { width: 100%; }
+    .p-2 { padding: 0.85rem 1.25rem; }
+    .alert {
+      padding: 0.85rem 1rem;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.85rem;
+    }
+    .alert-danger {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #f87171;
+    }
+    .alert-success {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+    }
+  </style>
 </head>
 <body class="flex-center">
   <div class="login-container">
