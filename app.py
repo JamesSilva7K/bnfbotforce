@@ -5,9 +5,26 @@ auditoria de documentos e download seguro.
 """
 
 import os
+import sys
+import types
 import hashlib
 import functools
 from datetime import datetime
+
+# Polyfill de compatibilidade urllib3.contrib.appengine para python-telegram-bot v13 na Vercel
+try:
+    import urllib3.contrib.appengine
+except ModuleNotFoundError:
+    try:
+        import urllib3.contrib
+        appengine_mock = types.ModuleType("appengine")
+        appengine_mock.is_appengine_sandbox = lambda: False
+        appengine_mock.is_local_development_server = lambda: False
+        appengine_mock.AppEnginePlatformWarning = type("AppEnginePlatformWarning", (Warning,), {})
+        urllib3.contrib.appengine = appengine_mock
+        sys.modules["urllib3.contrib.appengine"] = appengine_mock
+    except Exception:
+        pass
 from flask import (
     Flask,
     render_template,
