@@ -11,7 +11,21 @@ import hashlib
 import functools
 from datetime import datetime
 
-# Polyfill de compatibilidade urllib3.contrib.appengine para python-telegram-bot v13 na Vercel
+# 1. Polyfill pkg_resources para APScheduler no Python 3.12 (Vercel)
+try:
+    import pkg_resources
+except ModuleNotFoundError:
+    try:
+        class _MockDist:
+            version = "3.10.4"
+        pkg_mock = types.ModuleType("pkg_resources")
+        pkg_mock.get_distribution = lambda name: _MockDist()
+        pkg_mock.DistributionNotFound = type("DistributionNotFound", (Exception,), {})
+        sys.modules["pkg_resources"] = pkg_mock
+    except Exception:
+        pass
+
+# 2. Polyfill de compatibilidade urllib3.contrib.appengine para python-telegram-bot v13 na Vercel
 try:
     import urllib3.contrib.appengine
 except ModuleNotFoundError:
