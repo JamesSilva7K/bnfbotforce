@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Documento Gerado | Super-Admin BNF{% endblock %}
+{% block page_title %}Documento Emitido com Sucesso{% endblock %}
+
+{% block content %}
+<div class="max-w-900 mx-auto">
+  <div class="glass-panel text-center p-4">
+    <div class="check-circle-icon">
+      <svg class="svg-icon-lg text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    </div>
+
+    <h2 class="font-xl text-main mb-1">
+      Declaração Gerada com Perfeição!
+    </h2>
+    <p class="text-muted font-md max-w-600 mx-auto mb-3">
+      O documento foi renderizado em alta definição e catalogado nos registros de auditoria com hash de integridade criptográfica.
+    </p>
+
+    <!-- Dados do Lead -->
+    <div class="card-callout max-w-600 mx-auto mb-3 text-left">
+      <div class="grid-2 font-sm">
+        <div><strong class="text-dim">Lead:</strong> <span class="text-main">{{ doc.lead_name }}</span></div>
+        <div><strong class="text-dim">Data de Emissão:</strong> <span class="text-main">{{ doc.data_emissao }}</span></div>
+        <div><strong class="text-dim">RG:</strong> <code>{{ doc.lead_rg }}</code></div>
+        <div><strong class="text-dim">CPF:</strong> <code>{{ doc.lead_cpf }}</code></div>
+        <div><strong class="text-dim">Emitente:</strong> <span class="text-accent">{{ doc.admin_name }}</span></div>
+        <div><strong class="text-dim">Registro:</strong> <span class="text-muted">{{ doc.created_at }}</span></div>
+      </div>
+      {% if doc.file_hash %}
+      <div class="mt-2 pt-2 border-top font-xs text-dim">
+        <strong>Hash SHA-256:</strong> <code>{{ doc.file_hash }}</code>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Botões de Ação -->
+    <div class="d-flex flex-center gap-lg mb-4">
+      <a href="{{ url_for('secure_download', token=doc.download_token) }}" class="btn btn-primary p-2">
+        <svg class="svg-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span>Baixar Arquivo PDF</span>
+      </a>
+      <a href="{{ url_for('web_generate') }}" class="btn btn-outline">
+        <svg class="svg-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>Emitir Outro</span>
+      </a>
+      <a href="{{ url_for('documents_page') }}" class="btn btn-outline">
+        <svg class="svg-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span>Ver Histórico</span>
+      </a>
+    </div>
+
+    <!-- Prévia Renderizada da Imagem -->
+    <div class="preview-container max-w-700 mx-auto">
+      <div class="font-sm text-dim mb-1 text-left">
+        Prévia em Alta Definição (150 DPI)
+      </div>
+      <img src="{{ url_for('view_preview_image', doc_uuid=doc.doc_uuid) }}" alt="Prévia do PDF" class="w-100 mx-auto">
+    </div>
+  </div>
+</div>
+{% endblock %}

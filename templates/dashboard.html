@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Painel Principal | Super-Admin BNF{% endblock %}
+{% block page_title %}Visão Geral do Sistema{% endblock %}
+
+{% block content %}
+<!-- Cards de Métricas em Tempo Real -->
+<div class="stats-grid">
+  <div class="stat-card primary">
+    <div class="stat-data">
+      <span class="stat-label">Total de Documentos</span>
+      <span class="stat-value" id="kpi-total-docs">{{ metrics.total_docs }}</span>
+      <span class="stat-sub">PDFs autenticados com sucesso</span>
+    </div>
+    <div class="stat-icon text-accent">
+      <svg class="svg-icon-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    </div>
+  </div>
+
+  <div class="stat-card success">
+    <div class="stat-data">
+      <span class="stat-label">Emissões Hoje</span>
+      <span class="stat-value" id="kpi-docs-today">{{ metrics.docs_today }}</span>
+      <span class="stat-sub">Últimas 24 horas</span>
+    </div>
+    <div class="stat-icon text-success">
+      <svg class="svg-icon-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    </div>
+  </div>
+
+  <div class="stat-card accent">
+    <div class="stat-data">
+      <span class="stat-label">Admins Ativos</span>
+      <span class="stat-value" id="kpi-admins-active">{{ metrics.admins_active }}</span>
+      <span class="stat-sub">Com acesso ao Telegram</span>
+    </div>
+    <div class="stat-icon text-accent">
+      <svg class="svg-icon-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+    </div>
+  </div>
+
+  <div class="stat-card danger">
+    <div class="stat-data">
+      <span class="stat-label">Admins Revogados</span>
+      <span class="stat-value" id="kpi-admins-revoked">{{ metrics.admins_revoked }}</span>
+      <span class="stat-sub">Acesso bloqueado</span>
+    </div>
+    <div class="stat-icon text-danger">
+      <svg class="svg-icon-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+    </div>
+  </div>
+</div>
+
+{% if metrics.admins_pending > 0 %}
+<div class="alert alert-warning flex-between">
+  <div class="d-flex align-center gap-md">
+    <svg class="svg-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <div>
+      <strong>Solicitações de Acesso Pendentes:</strong> Existem <strong>{{ metrics.admins_pending }}</strong> usuário(s) aguardando autorização para utilizar o bot.
+    </div>
+  </div>
+  <a href="{{ url_for('admins_page') }}" class="btn btn-primary btn-sm">Revisar Solicitações</a>
+</div>
+{% endif %}
+
+<!-- Tabela de Últimas Emissões -->
+<div class="glass-panel">
+  <div class="panel-header">
+    <div class="panel-title">
+      <svg class="svg-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span>Declarações Geradas Recentemente</span>
+    </div>
+    <a href="{{ url_for('documents_page') }}" class="btn btn-outline btn-sm">Ver Todas</a>
+  </div>
+
+  {% if recent_docs %}
+  <div class="table-responsive">
+    <table class="modern-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Lead / Beneficiário</th>
+          <th>RG / CPF</th>
+          <th>Administrador Responsável</th>
+          <th>Data Emissão</th>
+          <th>Data/Hora Registro</th>
+          <th class="text-right">Ações Rápidas</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for doc in recent_docs %}
+        <tr>
+          <td class="text-dim font-sm">#{{ doc.id }}</td>
+          <td>
+            <strong>{{ doc.lead_name }}</strong>
+          </td>
+          <td>
+            <div class="font-sm">RG: <code>{{ doc.lead_rg }}</code></div>
+            <div class="font-sm text-muted">CPF: <code>{{ doc.lead_cpf }}</code></div>
+          </td>
+          <td>
+            <div class="d-flex align-center gap-sm">
+              {% if doc.admin_telegram_id %}
+                <img 
+                  src="{{ url_for('get_admin_avatar', telegram_id=doc.admin_telegram_id) }}" 
+                  alt="{{ doc.admin_name }}" 
+                  class="admin-avatar-img"
+                  style="width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;"
+                  onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%234f46e5%22/><circle cx=%2250%22 cy=%2238%22 r=%2218%22 fill=%22%23fff%22/><path d=%22M 22 84 C 22 66, 36 60, 50 60 C 64 60, 78 66, 78 84 Z%22 fill=%22%23fff%22/></svg>';">
+              {% endif %}
+              <span class="badge badge-super">{{ doc.admin_name }}</span>
+            </div>
+          </td>
+          <td>{{ doc.data_emissao }}</td>
+          <td class="text-muted font-sm">{{ doc.created_at }}</td>
+          <td class="text-right">
+            <div class="d-flex flex-end gap-sm">
+              <button 
+                class="btn btn-outline btn-sm"
+                onclick="openPreviewModal('{{ doc.doc_uuid }}', '{{ doc.lead_name }}', '{{ doc.download_token }}')"
+                title="Visualizar Prévia">
+                <svg class="svg-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                Prévia
+              </button>
+              <a 
+                href="{{ url_for('secure_download', token=doc.download_token) }}" 
+                class="btn btn-primary btn-sm"
+                title="Baixar PDF Original">
+                <svg class="svg-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Baixar
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">
+      <svg class="svg-icon-lg text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <p>Nenhuma declaração foi emitida ainda.</p>
+    <a href="{{ url_for('web_generate') }}" class="btn btn-primary btn-sm mt-2">
+      Emitir Primeira Declaração
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Logs de Auditoria Recentes -->
+<div class="glass-panel">
+  <div class="panel-header">
+    <div class="panel-title">
+      <svg class="svg-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <span>Log de Atividades e Auditoria</span>
+    </div>
+    <span class="font-xs text-accent font-semibold">TEMPO REAL</span>
+  </div>
+
+  <div class="table-responsive">
+    <table class="modern-table">
+      <thead>
+        <tr>
+          <th>Horário</th>
+          <th>Ator / Usuário</th>
+          <th>Ação</th>
+          <th>Detalhes</th>
+          <th>Origem</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in recent_logs %}
+        <tr>
+          <td class="text-dim font-sm">{{ log.timestamp }}</td>
+          <td><strong>{{ log.actor }}</strong></td>
+          <td>
+            <span class="badge {% if 'GERAÇÃO' in log.action %}badge-active{% elif 'REVOGAÇÃO' in log.action or 'FALHA' in log.action %}badge-revoked{% else %}badge-pending{% endif %}">
+              {{ log.action }}
+            </span>
+          </td>
+          <td class="font-md text-muted">{{ log.details }}</td>
+          <td><code>{{ log.ip_address }}</code></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  setInterval(() => {
+    fetch('/api/metrics')
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('kpi-total-docs').innerText = data.total_docs;
+        document.getElementById('kpi-docs-today').innerText = data.docs_today;
+        document.getElementById('kpi-admins-active').innerText = data.admins_active;
+        document.getElementById('kpi-admins-revoked').innerText = data.admins_revoked;
+      })
+      .catch(err => console.error("Erro ao sincronizar métricas:", err));
+  }, 10000);
+</script>
+{% endblock %}

@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Administradores | Super-Admin BNF{% endblock %}
+{% block page_title %}Gestão de Administradores & Acesso Telegram{% endblock %}
+
+{% block content %}
+<div class="flex-between mb-3">
+  <div>
+    <p class="text-muted font-md">
+      Gerencie permissões de acesso ao bot do Telegram. Você pode revogar ou reativar o acesso de qualquer administrador em tempo real.
+    </p>
+  </div>
+  <button class="btn btn-primary" onclick="document.getElementById('addAdminModal').classList.add('active')">
+    <svg class="svg-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <span>Cadastrar Administrador</span>
+  </button>
+</div>
+
+<div class="glass-panel">
+  <div class="panel-header">
+    <div class="panel-title">
+      <svg class="svg-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Administradores Cadastrados</span>
+    </div>
+    <span class="font-sm text-muted">Total: {{ admins|length }}</span>
+  </div>
+
+  {% if admins %}
+  <div class="table-responsive">
+    <table class="modern-table">
+      <thead>
+        <tr>
+          <th>Administrador</th>
+          <th>ID Telegram</th>
+          <th>Função</th>
+          <th>Status</th>
+          <th>Primeiro Contato</th>
+          <th>Última Atividade</th>
+          <th>Total PDFs</th>
+          <th class="text-right">Ações de Controle</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for admin in admins %}
+        <tr>
+          <td>
+            <div class="admin-user-cell">
+              <div class="admin-avatar-wrap">
+                <img 
+                  src="{{ url_for('get_admin_avatar', telegram_id=admin.telegram_id) }}" 
+                  alt="{{ admin.full_name }}" 
+                  class="admin-avatar-img"
+                  onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%234f46e5%22/><circle cx=%2250%22 cy=%2238%22 r=%2218%22 fill=%22%23fff%22/><path d=%22M 22 84 C 22 66, 36 60, 50 60 C 64 60, 78 66, 78 84 Z%22 fill=%22%23fff%22/></svg>';">
+                {% if admin.status == 'active' %}
+                  <span class="admin-online-badge" title="Ativo no Telegram"></span>
+                {% endif %}
+              </div>
+              <div>
+                <div class="admin-meta-name">{{ admin.full_name }}</div>
+                <div class="admin-meta-handle">
+                  {% if admin.username %}
+                    <span>@{{ admin.username }}</span>
+                  {% else %}
+                    <span class="text-dim">sem @username</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </td>
+          <td><code>{{ admin.telegram_id }}</code></td>
+          <td>
+            {% if admin.role == 'super_admin' %}
+              <span class="badge badge-super">SUPER-ADMIN</span>
+            {% else %}
+              <span class="badge badge-active">OPERADOR</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if admin.status == 'active' %}
+              <span class="badge badge-active">ATIVO</span>
+            {% elif admin.status == 'revoked' %}
+              <span class="badge badge-revoked">REVOGADO</span>
+            {% else %}
+              <span class="badge badge-pending">PENDENTE</span>
+            {% endif %}
+          </td>
+          <td class="text-muted font-sm">
+            {{ admin.first_seen_at or admin.created_at or '-' }}
+          </td>
+          <td class="text-muted font-sm">
+            {{ admin.last_active_at or 'Nunca' }}
+          </td>
+          <td><strong>{{ admin.total_generated }}</strong></td>
+          <td class="text-right">
+            <div class="d-flex flex-end gap-sm">
+              {% if admin.status == 'active' %}
+                <!-- Botão de Revogar -->
+                <form action="{{ url_for('api_change_admin_status', telegram_id=admin.telegram_id) }}" method="POST" class="mb-0">
+                  <input type="hidden" name="status" value="revoked">
+                  <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Tem certeza que deseja REVOGAR o acesso de {{ admin.full_name }} no Telegram?')" title="Bloquear Acesso">
+                    <svg class="svg-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                    Revogar
+                  </button>
+                </form>
+              {% elif admin.status == 'revoked' %}
+                <!-- Botão de Reativar -->
+                <form action="{{ url_for('api_change_admin_status', telegram_id=admin.telegram_id) }}" method="POST" class="mb-0">
+                  <input type="hidden" name="status" value="active">
+                  <button type="submit" class="btn btn-success btn-sm" title="Reativar Acesso">
+                    <svg class="svg-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    Reativar
+                  </button>
+                </form>
+              {% else %}
+                <!-- Botão de Aprovação Pendente -->
+                <form action="{{ url_for('api_change_admin_status', telegram_id=admin.telegram_id) }}" method="POST" class="mb-0">
+                  <input type="hidden" name="status" value="active">
+                  <button type="submit" class="btn btn-success btn-sm" title="Aprovar Acesso">
+                    <svg class="svg-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    Aprovar
+                  </button>
+                </form>
+              {% endif %}
+
+              <!-- Excluir -->
+              <form action="{{ url_for('api_delete_admin', telegram_id=admin.telegram_id) }}" method="POST" class="mb-0">
+                <button type="submit" class="btn btn-outline btn-sm" onclick="return confirm('Deseja excluir permanentemente este administrador?')" title="Excluir">
+                  <svg class="svg-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">
+      <svg class="svg-icon-lg text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    </div>
+    <p>Nenhum administrador cadastrado até o momento.</p>
+    <button class="btn btn-primary btn-sm mt-2" onclick="document.getElementById('addAdminModal').classList.add('active')">
+      Cadastrar Primeiro Administrador
+    </button>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Modal para Adicionar Administrador -->
+<div id="addAdminModal" class="modal-overlay">
+  <div class="modal-content">
+    <button class="modal-close" onclick="document.getElementById('addAdminModal').classList.remove('active')">&times;</button>
+    <h3 class="mb-3 text-main">Cadastrar Administrador</h3>
+
+    <form action="{{ url_for('api_add_admin') }}" method="POST">
+      <div class="form-group">
+        <label for="new_admin_telegram_id" class="form-label">ID do Telegram (Numérico) *</label>
+        <input id="new_admin_telegram_id" type="number" name="telegram_id" class="form-control" placeholder="Ex: 123456789" required>
+        <small class="text-dim font-xs">O usuário pode obter seu ID com bots como @userinfobot no Telegram.</small>
+      </div>
+
+      <div class="form-group">
+        <label for="new_admin_full_name" class="form-label">Nome Completo *</label>
+        <input id="new_admin_full_name" type="text" name="full_name" class="form-control" placeholder="Ex: Lucas Ferreira dos Santos" required>
+      </div>
+
+      <div class="form-group">
+        <label for="new_admin_username" class="form-label">Username do Telegram (Opcional)</label>
+        <input id="new_admin_username" type="text" name="username" class="form-control" placeholder="Ex: lucasferreira (sem @)">
+      </div>
+
+      <div class="form-group">
+        <label for="admin_role" class="form-label">Perfil de Acesso</label>
+        <select id="admin_role" name="role" class="form-control" title="Perfil de Acesso">
+          <option value="admin" selected>Administrador Padrão</option>
+          <option value="super_admin">Super-Administrador</option>
+        </select>
+      </div>
+
+      <div class="d-flex flex-end gap-md mt-3">
+        <button type="button" class="btn btn-outline" onclick="document.getElementById('addAdminModal').classList.remove('active')">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar e Liberar Acesso</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

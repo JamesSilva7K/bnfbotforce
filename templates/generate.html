@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Emitir Declaração | Super-Admin BNF{% endblock %}
+{% block page_title %}Emissão Inteligente de Declaração{% endblock %}
+
+{% block content %}
+<div class="max-w-800 mx-auto">
+  <div class="glass-panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <svg class="svg-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <span>Preenchimento de Declaração Oficial</span>
+      </div>
+      <span class="badge badge-active">ALTA PRECISÃO VETORIAL</span>
+    </div>
+
+    <p class="text-muted font-md mb-3">
+      Insira os dados do lead abaixo. O sistema aplicará a tipografia vetorial oficial (Arial / Arial Bold) com precisão cirúrgica sobre o modelo da instituição <strong>ACSICA</strong>, mantendo assinaturas e carimbos perfeitamente intactos.
+    </p>
+
+    <form action="{{ url_for('web_generate') }}" method="POST">
+      <div class="form-group">
+        <label for="lead_nome" class="form-label">Nome Completo do Lead / Beneficiário *</label>
+        <input 
+          id="lead_nome"
+          type="text" 
+          name="nome" 
+          class="form-control" 
+          placeholder="Ex: LUCIANO GOMES DA ROCHA" 
+          value="{{ nome or '' }}" 
+          required 
+          autofocus>
+        <small class="text-dim font-xs">O nome será automaticamente padronizado em caixa alta com ênfase negrito.</small>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label for="lead_rg" class="form-label">RG (Registro Geral) *</label>
+          <input 
+            id="lead_rg"
+            type="text" 
+            name="rg" 
+            class="form-control" 
+            placeholder="Ex: 37.946.747-1" 
+            value="{{ rg or '' }}" 
+            required>
+        </div>
+
+        <div class="form-group">
+          <label for="lead_cpf" class="form-label">CPF *</label>
+          <input 
+            id="lead_cpf"
+            type="text" 
+            name="cpf" 
+            class="form-control" 
+            placeholder="Ex: 340.091.828/81 ou apenas números" 
+            value="{{ cpf or '' }}" 
+            required>
+          <small class="text-dim font-xs">Pontuação aplicada automaticamente (Ex: 340.091.828/81).</small>
+        </div>
+      </div>
+
+      <div class="card-callout">
+        <div class="font-bold font-sm text-main mb-2 d-flex align-center gap-sm">
+          <svg class="svg-icon-sm text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span>Diretrizes e Parâmetros da Emissão:</span>
+        </div>
+        <div class="lead-spec-grid">
+          <div class="spec-row">
+            <span class="spec-label">Escopo de Edição:</span>
+            <span class="spec-val">Estritamente Nome do Lead, RG e CPF</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-label">Entidade Emissora:</span>
+            <span class="spec-val">ACSICA (CNPJ: 08.482.362/0001-78)</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-label">Signatário Homologado:</span>
+            <span class="spec-val">Emerson de Godoy Costa dos Santos (Presidente)</span>
+          </div>
+          <div class="spec-row">
+            <span class="spec-label">Precisão Tipográfica:</span>
+            <span class="spec-val">Vetorial Arial / Arial Bold 9.8pt (sem artefatos)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex flex-end gap-lg">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline">Cancelar</a>
+        <button type="submit" class="btn btn-primary p-2">
+          <svg class="svg-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span>Gerar e Salvar PDF</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Máscaras e pontuação automática inteligente em tempo real
+  const rgInput = document.getElementById('lead_rg');
+  const cpfInput = document.getElementById('lead_cpf');
+
+  function autoFormatRG(val) {
+    let clean = val.replace(/[^0-9Xx]/g, '').toUpperCase();
+    if (clean.length === 9) {
+      return clean.replace(/(\d{2})(\d{3})(\d{3})([0-9Xx])/, '$1.$2.$3-$4');
+    } else if (clean.length === 8) {
+      return clean.replace(/(\d{1})(\d{3})(\d{3})([0-9Xx])/, '$1.$2.$3-$4');
+    }
+    return val;
+  }
+
+  function autoFormatCPF(val) {
+    let digits = val.replace(/\D/g, '');
+    if (digits.length === 11) {
+      let sep = val.includes('-') ? '-' : '/';
+      return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3' + sep + '$4');
+    }
+    return val;
+  }
+
+  rgInput.addEventListener('blur', function() {
+    this.value = autoFormatRG(this.value);
+  });
+
+  cpfInput.addEventListener('blur', function() {
+    this.value = autoFormatCPF(this.value);
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Super-Admin | Sistema de Emissão Inteligente{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%234f46e5%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M13 2L3 14h9l-1 8 10-12h-9l1-8z%22/></svg>">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-badge">
+          <svg class="svg-icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </div>
+        <div>
+          <div class="brand-title">BNF DOCS</div>
+          <div class="brand-sub">Super-Admin v2.0</div>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <div class="nav-label">Visão Geral</div>
+        <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+          <span class="nav-icon">
+            <svg class="svg-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+          </span>
+          Painel de Controle
+        </a>
+        <a href="{{ url_for('documents_page') }}" class="nav-item {% if request.endpoint == 'documents_page' %}active{% endif %}">
+          <span class="nav-icon">
+            <svg class="svg-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </span>
+          Auditoria de PDFs
+        </a>
+
+        <div class="nav-label mt-2">Operações</div>
+        <a href="{{ url_for('web_generate') }}" class="nav-item {% if request.endpoint == 'web_generate' %}active{% endif %}">
+          <span class="nav-icon">
+            <svg class="svg-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          </span>
+          Emitir Declaração
+        </a>
+        <a href="{{ url_for('admins_page') }}" class="nav-item {% if request.endpoint == 'admins_page' %}active{% endif %}">
+          <span class="nav-icon">
+            <svg class="svg-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </span>
+          Administradores
+        </a>
+
+        <div class="nav-label mt-2">Sistema</div>
+        <a href="{{ url_for('settings_page') }}" class="nav-item {% if request.endpoint == 'settings_page' %}active{% endif %}">
+          <span class="nav-icon">
+            <svg class="svg-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </span>
+          Configurações & Bot
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div class="admin-avatar-wrap" style="width: 40px; height: 40px; position: relative;">
+            <img 
+              src="{{ url_for('get_admin_avatar', telegram_id=master_admin.telegram_id) }}" 
+              alt="{{ master_admin.full_name }}" 
+              class="admin-avatar-img"
+              style="width: 40px; height: 40px; border-radius: 50%;"
+              onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%234f46e5%22/><circle cx=%2250%22 cy=%2238%22 r=%2218%22 fill=%22%23fff%22/><path d=%22M 22 84 C 22 66, 36 60, 50 60 C 64 60, 78 66, 78 84 Z%22 fill=%22%23fff%22/></svg>';">
+            <span class="admin-online-badge" style="width: 10px; height: 10px; bottom: 0; right: 0;" title="Conectado"></span>
+          </div>
+          <div class="user-info" style="margin-left: 10px; overflow: hidden;">
+            <span class="user-name" style="font-weight: 700; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; display: block;">{{ master_admin.full_name }}</span>
+            <span class="user-role" style="color: var(--accent); font-size: 0.75rem; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; display: block;">
+              {% if master_admin.username %}@{{ master_admin.username }}{% else %}Acesso Mestre{% endif %}
+            </span>
+          </div>
+        </div>
+        <a href="{{ url_for('logout') }}" title="Sair do Sistema" class="logout-link">
+          <svg class="svg-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <main class="main-wrapper">
+      <header class="topbar">
+        <h1 class="page-title">
+          {% block page_title %}Painel Principal{% endblock %}
+        </h1>
+        <div class="topbar-actions">
+          <a href="{{ url_for('web_generate') }}" class="btn btn-primary btn-sm">
+            <svg class="svg-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Nova Declaração</span>
+          </a>
+        </div>
+      </header>
+
+      <div class="content-body">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">
+                <svg class="svg-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <div>{{ message }}</div>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal Global de Prévia -->
+  <div id="previewModal" class="modal-overlay">
+    <div class="modal-content max-w-800 text-center">
+      <button class="modal-close" onclick="closePreviewModal()">&times;</button>
+      <h3 id="previewTitle" class="mb-2 text-main">Prévia do Documento</h3>
+      <div class="modal-preview-body">
+        <img id="previewImage" src="" alt="Prévia" class="w-100 mx-auto">
+      </div>
+      <div class="d-flex flex-center gap-lg mt-2">
+        <a id="previewDownloadBtn" href="#" class="btn btn-primary btn-sm">
+          <svg class="svg-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Baixar Arquivo PDF
+        </a>
+        <button class="btn btn-outline btn-sm" onclick="closePreviewModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openPreviewModal(uuid, name, downloadToken) {
+      document.getElementById('previewTitle').innerText = 'Prévia: ' + name;
+      document.getElementById('previewImage').src = '/preview/' + uuid;
+      document.getElementById('previewDownloadBtn').href = '/download/' + downloadToken;
+      document.getElementById('previewModal').classList.add('active');
+    }
+
+    function closePreviewModal() {
+      document.getElementById('previewModal').classList.remove('active');
+      document.getElementById('previewImage').src = '';
+    }
+
+    document.getElementById('previewModal').addEventListener('click', function(e) {
+      if (e.target === this) closePreviewModal();
+    });
+  </script>
+</body>
+</html>

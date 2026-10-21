@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Configurações & Bot | Super-Admin BNF{% endblock %}
+{% block page_title %}Configurações Gerais & Integração Telegram{% endblock %}
+
+{% block content %}
+<div class="grid-2 mb-4">
+  <!-- Configuração do Telegram Bot -->
+  <div class="glass-panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <svg class="svg-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="16" y1="16" x2="16.01" y2="16"/></svg>
+        <span>Integração do Bot do Telegram</span>
+      </div>
+      {% if current_token %}
+        <span class="badge badge-active">CONECTADO</span>
+      {% else %}
+        <span class="badge badge-pending">PENDENTE</span>
+      {% endif %}
+    </div>
+
+    <p class="text-muted font-sm mb-3">
+      Insira o Token de API fornecido pelo <strong>@BotFather</strong> no Telegram para conectar o robô assistente.
+    </p>
+
+    <form action="{{ url_for('settings_page') }}" method="POST">
+      <input type="hidden" name="action" value="save_bot_token">
+      
+      <div class="form-group">
+        <label for="bot_token_input" class="form-label">Telegram Bot Token</label>
+        <input 
+          id="bot_token_input"
+          type="text" 
+          name="bot_token" 
+          class="form-control" 
+          placeholder="Ex: 7123456789:ABCdefGhIJKlmNoPQRstuVWXyz" 
+          value="{{ current_token }}" 
+          required>
+        <small class="text-dim font-xs">O token é armazenado de forma protegida no banco de dados SQLite local.</small>
+      </div>
+
+      <div class="d-flex flex-between align-center mt-3 flex-wrap gap-sm">
+        <button type="submit" class="btn btn-primary">
+          <svg class="svg-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <span>Salvar Token do Bot</span>
+        </button>
+
+        <a href="{{ url_for('set_telegram_webhook') }}" class="btn btn-outline btn-sm" onclick="return confirm('Deseja ativar o Webhook do Telegram para esta URL da Vercel?')" title="Conecta o Bot via Webhook Serverless na Vercel">
+          <svg class="svg-icon-sm text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span>Ativar Webhook Vercel</span>
+        </a>
+      </div>
+    </form>
+
+    <div class="setup-guide-box">
+      <div class="setup-guide-header">
+        <svg class="svg-icon-sm text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>Como Obter a Chave do Telegram:</span>
+      </div>
+      <div class="setup-steps-list">
+        <div class="setup-step-item">
+          <div class="setup-step-badge">1</div>
+          <div class="setup-step-text">
+            Abra o aplicativo Telegram e inicie uma conversa com <code>@BotFather</code> oficial.
+          </div>
+        </div>
+        <div class="setup-step-item">
+          <div class="setup-step-badge">2</div>
+          <div class="setup-step-text">
+            Envie o comando <code>/newbot</code> e defina o nome de exibição e o username do seu robô.
+          </div>
+        </div>
+        <div class="setup-step-item">
+          <div class="setup-step-badge">3</div>
+          <div class="setup-step-text">
+            Copie o <strong>HTTP API Token</strong> gerado, cole no campo acima e clique em <strong>Salvar Token do Bot</strong>.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alterar Senha do Super-Admin -->
+  <div class="glass-panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <svg class="svg-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <span>Segurança do Super-Admin</span>
+      </div>
+      <span class="badge badge-super">ACESSO MESTRE</span>
+    </div>
+
+    <p class="text-muted font-sm mb-3">
+      Altere a senha mestre de acesso ao painel web. Recomenda-se uma senha forte com letras, números e símbolos.
+    </p>
+
+    <form action="{{ url_for('settings_page') }}" method="POST">
+      <input type="hidden" name="action" value="change_password">
+
+      <div class="form-group">
+        <label for="current_pass_input" class="form-label">Senha Atual</label>
+        <input id="current_pass_input" type="password" name="current_pass" class="form-control" placeholder="••••••••" required>
+      </div>
+
+      <div class="form-group">
+        <label for="new_pass_input" class="form-label">Nova Senha</label>
+        <input id="new_pass_input" type="password" name="new_pass" class="form-control" placeholder="No mínimo 6 caracteres" required>
+      </div>
+
+      <div class="form-group">
+        <label for="confirm_pass_input" class="form-label">Confirmar Nova Senha</label>
+        <input id="confirm_pass_input" type="password" name="confirm_pass" class="form-control" placeholder="Repita a nova senha" required>
+      </div>
+
+      <div class="d-flex flex-end mt-3">
+        <button type="submit" class="btn btn-primary">
+          <svg class="svg-icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 2l-2 2m-2-2l2 2M3 21l6-6m0 0l4-4m-4 4l-4 4m8-8l2-2m-2 2l-2-2"/></svg>
+          <span>Atualizar Senha</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Logs de Auditoria do Sistema -->
+<div class="glass-panel">
+  <div class="panel-header">
+    <div class="panel-title">
+      <svg class="svg-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <span>Trilha Completa de Auditoria & Segurança</span>
+    </div>
+    <span class="font-sm text-dim">Últimos 50 eventos registrados</span>
+  </div>
+
+  <div class="table-responsive">
+    <table class="modern-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Data / Horário</th>
+          <th>Ator</th>
+          <th>Tipo de Ação</th>
+          <th>Detalhes do Evento</th>
+          <th>IP / Origem</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in recent_logs %}
+        <tr>
+          <td class="text-dim font-sm">#{{ log.id }}</td>
+          <td class="font-sm text-muted">{{ log.timestamp }}</td>
+          <td><strong>{{ log.actor }}</strong></td>
+          <td>
+            <span class="badge {% if 'GERAÇÃO' in log.action %}badge-active{% elif 'REVOGAÇÃO' in log.action or 'FALHA' in log.action %}badge-revoked{% else %}badge-pending{% endif %}">
+              {{ log.action }}
+            </span>
+          </td>
+          <td class="font-md text-muted">{{ log.details }}</td>
+          <td><code>{{ log.ip_address }}</code></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
