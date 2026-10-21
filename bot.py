@@ -627,8 +627,52 @@ def handle_inline_field_edits(update: Update, context: CallbackContext) -> int:
 
 # --- Inicializador e Configuração do Bot ---
 
+def setup_dispatcher_handlers(dispatcher):
+    """Registra todos os comandos, máquina de estados e callbacks no dispatcher"""
+    conv_handler = ConversationHandler(
+        entry_points=[
+            CallbackQueryHandler(handle_home_callbacks, pattern=r"^(act_start_wizard|act_fast_import)$")
+        ],
+        states={
+            STAGE_NAME: [
+                MessageHandler(Filters.text & ~Filters.command, stage_name_received),
+                CallbackQueryHandler(cancel_operation, pattern="^act_cancel_wizard$")
+            ],
+            STAGE_RG: [
+                MessageHandler(Filters.text & ~Filters.command, stage_rg_received),
+                CallbackQueryHandler(handle_inline_field_edits, pattern="^act_edit_name$"),
+                CallbackQueryHandler(cancel_operation, pattern="^act_cancel_wizard$")
+            ],
+            STAGE_CPF: [
+                MessageHandler(Filters.text & ~Filters.command, stage_cpf_received),
+                CallbackQueryHandler(handle_inline_field_edits, pattern="^act_edit_rg$"),
+                CallbackQueryHandler(cancel_operation, pattern="^act_cancel_wizard$")
+            ],
+            STAGE_REVIEW: [
+                CallbackQueryHandler(execute_document_generation, pattern="^act_do_generate$"),
+                CallbackQueryHandler(handle_inline_field_edits, pattern=r"^(act_edit_name|act_edit_rg|act_edit_cpf)$"),
+                CallbackQueryHandler(cancel_operation, pattern="^act_cancel_wizard$")
+            ],
+            STAGE_FAST_IMPORT: [
+                MessageHandler(Filters.text & ~Filters.command, stage_fast_import_received),
+                CallbackQueryHandler(cancel_operation, pattern="^act_cancel_wizard$")
+            ]
+        },
+        fallbacks=[
+            CommandHandler("cancel", cancel_operation),
+            CallbackQueryHandler(cancel_operation, pattern="^act_cancel_wizard$")
+        ],
+        allow_reentry=True
+    )
+
+    dispatcher.add_handler(CommandHandler("start", start_command))
+    dispatcher.add_handler(CommandHandler("menu", start_command))
+    dispatcher.add_handler(CommandHandler("cancel", cancel_operation))
+    dispatcher.add_handler(conv_handler)
+    dispatcher.add_handler(CallbackQueryHandler(handle_home_callbacks))
+
 def create_bot_updater(token: Optional[str] = None) -> Optional[Updater]:
-    """Instancia o Updater com todos os handlers e máquina de estados interativa"""
+    """Instancia o Updater com todos os handlers para modo polling local"""
     active_token = token or database.get_system_setting("telegram_bot_token") or TELEGRAM_BOT_TOKEN
     if not active_token or active_token.strip() == "":
         logger.warning("Token do Telegram Bot não configurado.")
@@ -636,51 +680,7 @@ def create_bot_updater(token: Optional[str] = None) -> Optional[Updater]:
 
     try:
         updater = Updater(token=active_token, use_context=True)
-        dispatcher = updater.dispatcher
-
-        # Conversação 100% Interativa por Botões & Ações
-        conv_handler = ConversationHandler(
-            entry_points=[
-                CallbackQueryHandler(handle_home_callbacks, pattern=r"^(act_start_wizard|act_fast_import)$")
-            ],
-            states={
-                STAGE_NAME: [
-                    MessageHandler(Filters.text & ~Filters.command, stage_name_received),
-                    CallbackQueryHandler(cancel_operation, pattern="^act_cancel_wizard$")
-                ],
-                STAGE_RG: [
-                    MessageHandler(Filters.text & ~Filters.command, stage_rg_received),
-                    CallbackQueryHandler(handle_inline_field_edits, pattern="^act_edit_name$"),
-                    CallbackQueryHandler(cancel_operation, pattern="^act_cancel_wizard$")
-                ],
-                STAGE_CPF: [
-                    MessageHandler(Filters.text & ~Filters.command, stage_cpf_received),
-                    CallbackQueryHandler(handle_inline_field_edits, pattern="^act_edit_rg$"),
-                    CallbackQueryHandler(cancel_operation, pattern="^act_cancel_wizard$")
-                ],
-                STAGE_REVIEW: [
-                    CallbackQueryHandler(execute_document_generation, pattern="^act_do_generate$"),
-                    CallbackQueryHandler(handle_inline_field_edits, pattern=r"^(act_edit_name|act_edit_rg|act_edit_cpf)$"),
-                    CallbackQueryHandler(cancel_operation, pattern="^act_cancel_wizard$")
-                ],
-                STAGE_FAST_IMPORT: [
-                    MessageHandler(Filters.text & ~Filters.command, stage_fast_import_received),
-                    CallbackQueryHandler(cancel_operation, pattern="^act_cancel_wizard$")
-                ]
-            },
-            fallbacks=[
-                CommandHandler("cancel", cancel_operation),
-                CallbackQueryHandler(cancel_operation, pattern="^act_cancel_wizard$")
-            ],
-            allow_reentry=True
-        )
-
-        dispatcher.add_handler(CommandHandler("start", start_command))
-        dispatcher.add_handler(CommandHandler("menu", start_command))
-        dispatcher.add_handler(CommandHandler("cancel", cancel_operation))
-        dispatcher.add_handler(conv_handler)
-        dispatcher.add_handler(CallbackQueryHandler(handle_home_callbacks))
-
+        setup_dispatcher_handlers(updater.dispatcher)
         return updater
 
     except Exception as e:

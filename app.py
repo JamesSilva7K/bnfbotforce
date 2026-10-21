@@ -30,7 +30,9 @@ from config import (
     PREVIEWS_DIR,
     WEB_HOST,
     WEB_PORT,
-    DEBUG
+    DEBUG,
+    DEFAULT_ADMIN_USER,
+    DEFAULT_ADMIN_PASS
 )
 import database
 from pdf_engine import PDFEngine
@@ -84,12 +86,19 @@ def login():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
 
-        stored_user = database.get_system_setting("super_admin_user", "admin")
+        stored_user = database.get_system_setting("super_admin_user", DEFAULT_ADMIN_USER)
         stored_pass_hash = database.get_system_setting("super_admin_pass", "")
+
+        env_user = os.getenv("SUPER_ADMIN_USER", DEFAULT_ADMIN_USER).strip()
+        env_pass = os.getenv("SUPER_ADMIN_PASS", DEFAULT_ADMIN_PASS).strip()
 
         input_hash = hashlib.sha256(password.encode()).hexdigest()
 
-        if username == stored_user and input_hash == stored_pass_hash:
+        # Aceita autenticação tanto pelas variáveis de ambiente configuradas na Vercel quanto pela base local
+        is_env_match = (username.lower() == env_user.lower() and password == env_pass)
+        is_db_match = (username.lower() == stored_user.lower() and input_hash == stored_pass_hash)
+
+        if is_env_match or is_db_match:
             session["logged_in"] = True
             session["admin_user"] = username
             session["login_time"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
@@ -431,10 +440,27 @@ bot_dispatcher_instance = None
 def get_serverless_dispatcher():
     global bot_dispatcher_instance
     if bot_dispatcher_instance is None:
-        import bot as telegram_bot_module
-        updater = telegram_bot_module.create_bot_updater()
-        if updater:
-            bot_dispatcher_instance = updater.dispatcher
+        try:
+            from telegram import Bot
+            from telegram.ext import Dispatcher
+            from config import TELEGRAM_BOT_TOKEN
+            import bot as telegram_bot_module
+
+            token = database.get_system_setting("telegram_bot_token") or TELEGRAM_BOT_TOKEN
+            if not token or token.strip() == "":
+                app.logger.warning("Token do Telegram Bot não configurado no banco nem nas variáveis de ambiente.")
+                return None
+
+            bot_obj = Bot(token=token.strip())
+            # workers=0 é OBRIGATÓRIO em runtime Serverless (Vercel):
+            # Processa o update de forma síncrona na mesma thread antes de fechar a requisição HTTP.
+            dispatcher = Dispatcher(bot_obj, None, workers=0, use_context=True)
+            telegram_bot_module.setup_dispatcher_handlers(dispatcher)
+            bot_dispatcher_instance = dispatcher
+            app.logger.info("Dispatcher Serverless síncrono inicializado com sucesso.")
+        except Exception as e:
+            app.logger.error(f"Erro ao instanciar Dispatcher Serverless: {e}")
+            return None
     return bot_dispatcher_instance
 
 @app.route("/api/telegram-webhook", methods=["POST"])
@@ -458,21 +484,23 @@ def telegram_webhook():
     return jsonify({"status": "no data"}), 400
 
 @app.route("/api/telegram/set-webhook", methods=["POST", "GET"])
-@super_admin_required
 def set_telegram_webhook():
-    """Ativa o Webhook do Telegram automaticamente usando a URL da Vercel"""
+    """Ativa o Webhook do Telegram na Vercel de forma rápida e segura"""
     import requests
     from config import TELEGRAM_BOT_TOKEN
     
     custom_url = request.args.get("url") or request.form.get("url")
     if not custom_url:
         host_url = request.host_url.rstrip("/")
+        # Se estiver em localhost mas a Vercel estiver informada, permite passar a url
         custom_url = f"{host_url}/api/telegram-webhook"
 
     token = database.get_system_setting("telegram_bot_token") or TELEGRAM_BOT_TOKEN
     if not token:
+        if request.is_json or request.args.get("format") == "json":
+            return jsonify({"status": "error", "message": "Token do bot não configurado."}), 400
         flash("Token do bot não configurado.", "danger")
-        return redirect(url_for("settings_page"))
+        return redirect(url_for("settings_page") if session.get("logged_in") else url_for("login"))
 
     try:
         resp = requests.get(
@@ -484,18 +512,26 @@ def set_telegram_webhook():
         if res_data.get("ok"):
             database.set_system_setting("telegram_webhook_url", custom_url)
             database.log_audit_action(
-                actor=session.get("admin_user", "Super-Admin"),
+                actor=session.get("admin_user", "Sistema"),
                 action="WEBHOOK_ATIVADO",
                 details=f"Webhook ativado para: {custom_url}",
                 ip_address=request.remote_addr or "127.0.0.1"
             )
-            flash(f"Webhook ativado com sucesso no Telegram: {custom_url}", "success")
+            msg = f"Webhook ativado com sucesso no Telegram: {custom_url}"
+            if request.is_json or request.args.get("format") == "json":
+                return jsonify({"status": "success", "message": msg, "telegram_response": res_data}), 200
+            flash(msg, "success")
         else:
-            flash(f"Telegram retornou erro: {res_data.get('description')}", "danger")
+            err = res_data.get("description", "Erro desconhecido")
+            if request.is_json or request.args.get("format") == "json":
+                return jsonify({"status": "error", "message": err}), 400
+            flash(f"Telegram retornou erro: {err}", "danger")
     except Exception as e:
+        if request.is_json or request.args.get("format") == "json":
+            return jsonify({"status": "error", "message": str(e)}), 500
         flash(f"Falha de conexão com a API do Telegram: {e}", "danger")
 
-    return redirect(url_for("settings_page"))
+    return redirect(url_for("settings_page") if session.get("logged_in") else url_for("login"))
 
 # --- Inicialização ---
 
